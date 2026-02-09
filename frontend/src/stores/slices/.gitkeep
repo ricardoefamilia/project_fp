@@ -1,0 +1,6 @@
+# Slices Directory
+
+Add your Zustand store slices here.
+
+Example: `counter.slice.ts`, `user.slice.ts`, etc.
+

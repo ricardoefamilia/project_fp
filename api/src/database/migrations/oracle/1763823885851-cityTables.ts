@@ -1,0 +1,82 @@
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class CityTables1763823885851 implements MigrationInterface {
+  name = 'CityTables1763823885851';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE TABLE "TB_MUNICIPIO" (
+    "CO_MUNICIPIO_IBGE"          VARCHAR2(6) NOT NULL,
+    "CO_REGIONAL_SAUDE"          VARCHAR2(4),
+    "SG_UF"                      VARCHAR2(2) NOT NULL,
+    "CO_MACRORREGIONAL"          VARCHAR2(4),
+    "CO_MESORREGIAO"             VARCHAR2(4),
+    "CO_MICRORREGIAO"            VARCHAR2(5),
+    "CO_UF_IBGE"                 VARCHAR2(2),
+    "NO_MUNICIPIO"               VARCHAR2(60) NOT NULL,
+    "SG_MUNICIPIO"               VARCHAR2(3),
+    "NU_DDD"                     VARCHAR2(4),
+    "NU_CEP"                     VARCHAR2(8),
+    "DV_MUNICIPIO_IBGE"          VARCHAR2(1),
+    "CO_MUNICIPIO_SIAFI"         VARCHAR2(4),
+    "CO_MUNICIPIO_SIAPE"         VARCHAR2(10),
+    "CO_SINPAS"                  VARCHAR2(5),
+    "CO_REGIAO_CORREIO"          VARCHAR2(5),
+    "ST_MUNICIPIO"               VARCHAR2(10),
+    "ST_AMAZONIA"                VARCHAR2(1),
+    "ST_FRONTEIRA"               VARCHAR2(1),
+    "CO_SUCESSOR"                VARCHAR2(6),
+    "NO_ANTERIOR"                VARCHAR2(60),
+    "ST_COMUNIDADE_SOLIDARIA"    VARCHAR2(1) DEFAULT 'N',
+    "ST_SECA"                    VARCHAR2(1) DEFAULT 'N',
+    "ST_SEMI_ARIDO"              VARCHAR2(1),
+    "ST_PRMI"                    VARCHAR2(1) DEFAULT 'N',
+    "ST_CALAMIDADE"              VARCHAR2(1) DEFAULT 'N',
+    "ST_INDIGENA"                VARCHAR2(1) DEFAULT 'N',
+    "NU_DISTANCIA_CAPITAL"       NUMBER(6,2),
+    "ST_CAPITAL"                 VARCHAR2(1) DEFAULT 'N',
+    "NU_AREA"                    NUMBER(10,3),
+    "NU_LATITUDE"                VARCHAR2(30),
+    "NU_LONGITUDE"               VARCHAR2(30),
+    "NU_ALTITUDE"                NUMBER(4),
+    "ST_REGISTRO_ATIVO"          VARCHAR2(1) DEFAULT 'S',
+    "NU_IDH"                     NUMBER(5,4),
+    "CO_MUNICIPIO_CORREIO"       VARCHAR2(6),
+    "CO_MUNICIPIO_INSS"          VARCHAR2(5),
+    "CO_MICRORREGIONAL_SAUDE"    VARCHAR2(5),
+    "ST_PITS"                    VARCHAR2(1),
+    "ST_QUILOMBOLA"              VARCHAR2(1),
+    "CO_SEQ_ANTIGO"              NUMBER(6),
+    "NO_POPULAR"                 VARCHAR2(100),
+    "CO_REGIAO_METROPOLITANA"    VARCHAR2(4),
+    "CO_AGLOMERADO_URBANO"       VARCHAR2(4),
+    "NU_ANO_EXTINCAO"            VARCHAR2(4),
+    "NU_ANO_INSTALACAO"          VARCHAR2(4),
+    "ST_IBGE"                    VARCHAR2(1),
+    "CO_MUNICIPIO_SVS"           NUMBER(6),
+    "NO_MUNICIPIO_ACENTUADO"     VARCHAR2(60),
+    "ST_RIDE"                    VARCHAR2(1) DEFAULT 'N',
+    "CO_MUNICIPIO_CNES"          VARCHAR2(6),
+    "ST_SUDAM"                   VARCHAR2(1),
+    "ST_SUDENE"                  VARCHAR2(1),
+    "ST_CADSUS"                  VARCHAR2(1) DEFAULT 'S',
+    "CO_MUNICIPIO_ORIGEM"        VARCHAR2(6),
+    "CO_TERRITORIO_CIDADANIA"    NUMBER(3),
+    "ST_PSE"                     VARCHAR2(1),
+    "ST_PAN"                     VARCHAR2(1),
+    "ST_PACTO_RMINAL"            VARCHAR2(1),
+    "CO_MUNICIPIO_TABNET_RJ"     VARCHAR2(6),
+    "TP_TIPOLOGIA_PNDR"          VARCHAR2(20),
+    "CO_GRUPO_PAC2"              VARCHAR2(2),
+    "ST_CNES"                    VARCHAR2(1) DEFAULT 'N',
+    "CO_REGIAO_SAUDE"            NUMBER(4),
+    "ST_PACTO"                   VARCHAR2(1),
+    "ST_CIB_SAS"                 VARCHAR2(1),
+    "DT_MANUTENCAO"              DATE,
+    CONSTRAINT PK_7737db16f908866a049c1aae760 PRIMARY KEY ("CO_MUNICIPIO_IBGE")
+)`);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE "TB_MUNICIPIO"`);
+  }
+}

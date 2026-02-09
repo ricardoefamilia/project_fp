@@ -1,0 +1,235 @@
+# GitLab CI/CD Configuration for Farmácia Popular
+# Monorepo: Backend (NestJS) + Frontend (React)
+
+image: node:22-alpine
+
+stages:
+  - install
+  - lint
+  - test
+  - build
+  - deploy
+
+# Global cache configuration
+cache: &global_cache
+  key:
+    files:
+      - api/pnpm-lock.yaml
+      - frontend/pnpm-lock.yaml
+  paths:
+    - .pnpm-store/
+    - api/node_modules/
+    - frontend/node_modules/
+  policy: pull
+
+# Variables
+variables:
+  PNPM_HOME: /root/.local/share/pnpm
+  PATH: /root/.local/share/pnpm:$PATH
+
+# Before script to install pnpm
+.pnpm_setup: &pnpm_setup
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@latest --activate
+    - pnpm config set store-dir .pnpm-store
+
+# =============================================================================
+# INSTALL STAGE
+# =============================================================================
+
+install:api:
+  stage: install
+  <<: *pnpm_setup
+  script:
+    - cd api
+    - pnpm install --frozen-lockfile
+  cache:
+    <<: *global_cache
+    policy: pull-push
+  rules:
+    - changes:
+        - api/**/*
+        - .gitlab-ci.yml
+
+install:frontend:
+  stage: install
+  <<: *pnpm_setup
+  script:
+    - cd frontend
+    - pnpm install --frozen-lockfile
+  cache:
+    <<: *global_cache
+    policy: pull-push
+  rules:
+    - changes:
+        - frontend/**/*
+        - .gitlab-ci.yml
+
+# =============================================================================
+# LINT STAGE
+# =============================================================================
+
+lint:api:
+  stage: lint
+  <<: *pnpm_setup
+  needs:
+    - job: install:api
+      optional: true
+  script:
+    - cd api
+    - pnpm install --frozen-lockfile
+    - pnpm lint
+    - pnpm format:check
+  rules:
+    - changes:
+        - api/**/*
+        - .gitlab-ci.yml
+
+lint:frontend:
+  stage: lint
+  <<: *pnpm_setup
+  needs:
+    - job: install:frontend
+      optional: true
+  script:
+    - cd frontend
+    - pnpm install --frozen-lockfile
+    - pnpm lint
+    - pnpm format:check
+    - pnpm type-check
+  rules:
+    - changes:
+        - frontend/**/*
+        - .gitlab-ci.yml
+
+# =============================================================================
+# TEST STAGE
+# =============================================================================
+
+test:api:unit:
+  stage: test
+  <<: *pnpm_setup
+  needs:
+    - job: lint:api
+      optional: true
+  script:
+    - cd api
+    - pnpm install --frozen-lockfile
+    - pnpm test:cov
+  coverage: /All files[^|]*\|[^|]*\s+([\d\.]+)/
+  artifacts:
+    when: always
+    paths:
+      - api/coverage/
+    reports:
+      junit: api/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: api/coverage/cobertura-coverage.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - api/**/*
+        - .gitlab-ci.yml
+
+test:frontend:unit:
+  stage: test
+  <<: *pnpm_setup
+  needs:
+    - job: lint:frontend
+      optional: true
+  script:
+    - cd frontend
+    - pnpm install --frozen-lockfile
+    - pnpm test:coverage
+  coverage: /All files[^|]*\|[^|]*\s+([\d\.]+)/
+  artifacts:
+    when: always
+    paths:
+      - frontend/coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: frontend/coverage/cobertura-coverage.xml
+    expire_in: 1 week
+  rules:
+    - changes:
+        - frontend/**/*
+        - .gitlab-ci.yml
+
+# =============================================================================
+# BUILD STAGE
+# =============================================================================
+
+build:api:
+  stage: build
+  <<: *pnpm_setup
+  needs:
+    - job: test:api:unit
+      optional: true
+  script:
+    - cd api
+    - pnpm install --frozen-lockfile
+    - pnpm build
+  artifacts:
+    paths:
+      - api/dist/
+    expire_in: 1 week
+  rules:
+    - changes:
+        - api/**/*
+        - .gitlab-ci.yml
+
+build:frontend:
+  stage: build
+  <<: *pnpm_setup
+  needs:
+    - job: test:frontend:unit
+      optional: true
+  script:
+    - cd frontend
+    - pnpm install --frozen-lockfile
+    - pnpm build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
+  rules:
+    - changes:
+        - frontend/**/*
+        - .gitlab-ci.yml
+
+# =============================================================================
+# DEPLOY STAGE
+# =============================================================================
+
+deploy:staging:
+  stage: deploy
+  needs:
+    - build:api
+    - build:frontend
+  script:
+    - echo "Deploying to staging environment..."
+    - echo "API and Frontend artifacts ready for deployment"
+  environment:
+    name: staging
+    url: https://staging.example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: manual
+
+deploy:production:
+  stage: deploy
+  needs:
+    - build:api
+    - build:frontend
+  script:
+    - echo "Deploying to production environment..."
+    - echo "API and Frontend artifacts ready for deployment"
+  environment:
+    name: production
+    url: https://example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual

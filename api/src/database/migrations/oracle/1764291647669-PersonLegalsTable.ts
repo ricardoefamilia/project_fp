@@ -1,0 +1,43 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class PersonLegalsTable1764291647669 implements MigrationInterface {
+  name = 'PersonLegalsTable1764291647669'
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE TABLE "TB_PESSOA_JURIDICA" (
+    "NU_CNPJ" VARCHAR2(14) NOT NULL,
+    "DT_ABERTURA" DATE,
+    "NO_FANTASIA" VARCHAR2(250),
+    "CO_NATUREZA_JURIDICA" VARCHAR2(4),
+    "TP_SITUACAO_CNPJ" NUMBER(1),
+    "DT_SITUACAO_CNPJ" DATE,
+    "DS_SITUACAO_CNPJ" VARCHAR2(500),
+    "TP_MATRIZ_FILIAL" NUMBER(1),
+    "NO_CIDADE_EXTERIOR" VARCHAR2(60),
+    "CO_PAIS" VARCHAR2(3),
+    "NO_PAIS" VARCHAR2(70),
+    "TP_LOGRADOURO" VARCHAR2(30),
+    "NU_DDD" VARCHAR2(4),
+    "NU_TELEFONE" VARCHAR2(8),
+    "NU_DDD_FAX" VARCHAR2(4),
+    "NU_FAX" VARCHAR2(8),
+    "DS_EMAIL" VARCHAR2(115),
+    "NU_CPF_RESPONSAVEL" VARCHAR2(11),
+    "NU_CAPITAL_SOCIAL" NUMBER,
+    "CO_PORTE_EMPRESA" VARCHAR2(2),
+    "ST_OPCAO_SIMPLES" VARCHAR2(1),
+    "DT_OPCAO_SIMPLES" DATE,
+    "DT_EXCLUSAO_OPCAO_SIMPLES" DATE,
+    "NU_CNPJ_SUCEDIDA" VARCHAR2(14),
+    "ST_REGISTRO_ATIVO" VARCHAR2(1),
+    "CO_OPCAO_SIMPLES" VARCHAR2(1),
+    "NU_CNPJ_SUCESSORA" VARCHAR2 (14),
+
+ CONSTRAINT "PK_7737db16f908866a049c1aae875" PRIMARY KEY ("NU_CNPJ"))`);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE "TB_PESSOA_JURIDICA"`);
+  }
+
+}

@@ -1,0 +1,39 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class PersonPhysicalsTable1764291228777 implements MigrationInterface {
+  name = 'PersonPhysicalTable1764291228777'
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE TABLE "TB_PESSOA_FISICA" (
+    "NU_CPF" VARCHAR2(11) NOT NULL,
+    "DT_NASCIMENTO" DATE,
+    "NO_MAE" VARCHAR2(70),
+    "TP_SEXO" NUMBER(1),
+    "TP_SITUACAO_CPF" NUMBER(1),
+    "SG_SEXO" VARCHAR2(1),
+    "ST_RESIDENTE_EXTERIOR" VARCHAR2(1),
+    "CO_PAIS_EXTERIOR" VARCHAR2(4),
+    "NO_PAIS_EXTERIOR" VARCHAR2(60),
+    "CO_NATUREZA_OCUPACAO" VARCHAR2(3),
+    "CO_OCUPACAO_PRINCIPAL" VARCHAR2(3),
+    "NU_ANO_EXERCICIO_NATOCUP" VARCHAR2(4),
+    "CO_UNIDADE_ADMINISTRATIVA" VARCHAR2(7),
+    "NU_ANO_OBITO" VARCHAR2(4),
+    "ST_ESTRANGEIRO" VARCHAR2(1),
+    "NU_TITULO_ELEITOR" VARCHAR2(13),
+    "NU_CARTAO_SUS" VARCHAR2(15),
+    "NO_PAIS_NACIONALIDADE" VARCHAR2(60),
+    "CO_MUNICIPIO_IBGE_NATURALIDADE" VARCHAR2(6),
+    "NO_MUNICIPIO_NATURALIDADE" VARCHAR2(50),
+    "SG_UF_NATURALIDADE" VARCHAR2(2),
+    "NO_UNIDADE_ADMINISTRATIVA" VARCHAR2(50),
+    "NO_SOCIAL_PESSOA" VARCHAR2(150),
+
+ CONSTRAINT "PK_7737db16f908866a049c1aae870" PRIMARY KEY ("NU_CPF"))`);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE "TB_PESSOA_FISICA"`);
+  }
+
+}

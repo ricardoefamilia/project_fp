@@ -1,0 +1,187 @@
+services:
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-db
+    environment:
+      ORACLE_PASSWORD: root
+      ORACLE_DATABASE: FPAPI
+      APP_USER: root
+      APP_USER_PASSWORD: root
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+  postgres-config:
+    image: postgres:16-alpine
+    container_name: postgres-config
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: root
+      PGPASSWORD: root
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    command: >
+      sh -c "
+        echo 'Waiting for PostgreSQL to be ready...'
+        until pg_isready -h postgres -U root -d fpapi; do
+          echo 'Waiting for PostgreSQL...'
+          sleep 2
+        done
+        echo 'PostgreSQL is ready. Configuring pg_hba.conf...'
+        echo '' >> /var/lib/postgresql/data/pg_hba.conf
+        echo '# Docker network connections' >> /var/lib/postgresql/data/pg_hba.conf
+        echo 'host all all 0.0.0.0/0 md5' >> /var/lib/postgresql/data/pg_hba.conf
+        echo 'host all all 172.16.0.0/12 md5' >> /var/lib/postgresql/data/pg_hba.conf
+        echo 'Reloading PostgreSQL configuration...'
+        psql -h postgres -U root -d postgres -c 'SELECT pg_reload_conf();'
+        echo 'PostgreSQL authentication configured successfully!'
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: fpapi
+      POSTGRES_HOST_AUTH_METHOD: md5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c listen_addresses='*'
+      -c ssl=off
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d fpapi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  postgres-init:
+    image: postgres:16-alpine
+    container_name: postgres-init
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: fpapi
+      PGUSER: root
+      PGPASSWORD: root
+    volumes:
+      - ./src/database/seeds/pgdump.sql:/pgdump.sql
+    command: >
+      sh -c "
+        echo 'Waiting for PostgreSQL to be ready...'
+        until pg_isready -h postgres -U root -d fpapi; do
+          echo 'Waiting for PostgreSQL...'
+          sleep 2
+        done
+        echo 'PostgreSQL is ready. Waiting for database fpapi to be available...'
+        until psql -h postgres -U root -d fpapi -c 'SELECT 1' > /dev/null 2>&1; do
+          echo 'Waiting for database fpapi to be available...'
+          sleep 2
+        done
+        echo 'Database fpapi is available. Executing pgdump.sql...'
+        psql -h postgres -U root -d fpapi -f /pgdump.sql
+        if [ $? -eq 0 ]; then
+          echo 'Script executed successfully!'
+        else
+          echo 'Error executing pgdump.sql'
+          exit 1
+        fi
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-config:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-dev
+    command: >
+      sh -c "
+        echo 'Running PostgreSQL migrations...' &&
+        pnpm migration:pg:run &&
+        echo 'Running Oracle migrations...' &&
+        pnpm migration:oracle:run &&
+        echo 'Starting API in development mode...' &&
+        pnpm start:dev
+      "
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app:cached
+      - api_node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DATABASE=fpapi
+      - DB_HOST=oracle
+      - DB_PORT=1521
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+      - DB_SERVICE_NAME=FPAPI
+      - DB_POOL_SIZE=10
+      - DB_POOL_MIN=2
+      - DB_SYNCHRONIZE=false
+      - DB_LOGGING=false
+      - APP_NAME=fp-api
+      - APP_URL=http://localhost:5173
+      - POSTGRES_POOL_SIZE=10
+      - POSTGRES_POOL_MIN=2
+      - POSTGRES_SYNCHRONIZE=false
+      - POSTGRES_LOGGING=false
+      - TELEMETRY_ENABLED=false
+      - CORS_ORIGIN=http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-config:
+        condition: service_completed_successfully
+      postgres-init:
+        condition: service_completed_successfully
+      oracle:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  oracle-data:
+    driver: local
+  postgres-data:
+    driver: local
+  api_node_modules:
+    name: fp_api_node_modules
+
+networks:
+  app-network:
+    driver: bridge
